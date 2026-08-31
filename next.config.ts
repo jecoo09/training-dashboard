@@ -1,8 +1,7 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Tambahkan baris ini untuk mengizinkan IP lokal kamu
+  allowedDevOrigins: ['10.100.102.141', 'localhost:3000'],
 };
 
-export default nextConfig;
+module.exports = nextConfig;
