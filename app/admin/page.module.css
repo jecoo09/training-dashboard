@@ -1,0 +1,92 @@
+/* Empty stylesheet for admin page. */
+
+.table th, .table td {
+  border: 1px solid #94a3b8;
+  padding: 0.45rem 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alignLeft {
+  text-align: left !important;
+  font-weight: 600;
+  padding-left: 0.5rem !important;
+}
+
+.totalRow {
+  font-weight: 800;
+  background-color: #e2e8f0;
+}
+
+/* Ukuran Lebar Kolom Paten */
+.colNo { width: 45px; }
+.colWilayah { width: 140px; }
+.colProgram { width: 240px; }
+.colDataMonth { width: auto; }
+.colDataRegion { font-size: 0.7rem; }
+.colTotal { width: 85px; }
+
+/* VARIASI WAKTU / WARNA HEADER TABLE DI TIAP BAGIAN */
+/* Header Bagian 4 (Rekap Bulanan): Tema Indigo/Navy Soft */
+.headerTableB4 th {
+  background-color: #312e81;
+  color: #ffffff;
+}
+
+/* Header Bagian 5 (Growth % MoM): Tema Teal Soft */
+.headerTableB5 th {
+  background-color: #0f766e;
+  color: #ffffff;
+}
+
+/* Header Bagian 6: Selang-seling */
+.monthOdd { background-color: #ffffff; }
+.monthEven { background-color: #e0f2fe; }
+.headerOdd { background-color: #cbd5e1; color: #0f172a; }
+.headerEven { background-color: #7dd3fc; color: #0f172a; }
+
+/* Header Analitik Program Training: Tema Slate Solid */
+.headerTableProgram th {
+  background-color: #334155;
+  color: #ffffff;
+}
+
+/* Header Data Trainer (Bagian 11): Tema Blue Slate */
+.headerTableTrainer th {
+  background-color: #1e3a8a;
+  color: #ffffff;
+}
+
+/* Charts Grid */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.chartCard {
+  background-color: #f8fafc;
+  padding: 0.85rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+}
+
+.chartTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #475569;
+}

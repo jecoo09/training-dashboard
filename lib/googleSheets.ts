@@ -15,6 +15,13 @@ export interface TrainingRow {
   namaTrainer: string;
 }
 
+export interface TrainerMasterRow {
+  fullName: string;
+  nik: string;
+  locGroup: string;
+  position: string;
+}
+
 export async function getTrainingData(): Promise<TrainingRow[]> {
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -48,4 +55,32 @@ export async function getTrainingData(): Promise<TrainingRow[]> {
     totalTHours: parseFloat(row[9]) || 0,         // Kolom J
     namaTrainer: row[10] || 'Unknown',            // Kolom K
   }));
+}
+
+export async function findTrainerByNik(nik: string): Promise<TrainerMasterRow | null> {
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+
+  const sheets = google.sheets({ version: 'v4', auth });
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.SPREADSHEET_ID,
+    range: 'TRAINER!A2:E',
+  });
+
+  const row = (response.data.values || []).find((values) =>
+    String(values[2] || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') === nik,
+  );
+
+  if (!row) return null;
+  return {
+    fullName: String(row[1] || '').trim(),
+    nik: String(row[2] || '').trim(),
+    locGroup: String(row[3] || '').trim(),
+    position: String(row[4] || '').trim(),
+  };
 }
