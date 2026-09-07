@@ -1,0 +1,95 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(45deg, #ff5252 0%, #f57c00 50%, #ffc107 100%);
+}
+
+.card {
+  display: grid;
+  gap: 24px;
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  box-shadow: 0 12px 32px rgba(28, 25, 23, 0.12);
+}
+
+.content {
+  text-align: center;
+}
+
+.title,
+.subtitle {
+  font-family: var(--font-body);
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.input:focus {
+  outline: 2px solid var(--brand-soft);
+  outline-offset: 1px;
+}
+
+.submit {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  background-color: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.submit:disabled {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.submit :global(.loader) {
+  width: 28px;
+  border-width: 3px;
+}
+
+.submit :global(.loader::before) {
+  border-color: #fff #0000;
+}

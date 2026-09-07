@@ -1,22 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/layout/Header';
+import Sidebar from '@/components/layout/Sidebar';
+import KpiCards from '@/components/dashboard/KpiCards';
+import CategoryPie from '@/components/dashboard/CategoryPie';
+import FilterSection from '@/components/dashboard/FilterSection';
+import MonthlyAnalytics, { MomComparison } from '@/components/dashboard/MonthlyAnalytics';
+import ProgramAnalytics from '@/components/dashboard/ProgramAnalytics';
+import Loader from '@/components/ui/Loader';
+import { useToast } from '@/components/ui/ToastProvider';
+import type { User, TrainingRow } from '@/lib/dashboard';
+import layoutStyles from '@/components/layout/layout.module.css';
+import dashStyles from '@/components/dashboard/dashboard.module.css';
 
-interface User {
-  fullName: string;
-  nik: string;
-  locGroup: string | null;
-  role: string;
+interface TrainerAnalyticsData {
+  success: boolean;
+  rawData: TrainingRow[];
 }
 
 export default function TrainerDashboardPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<TrainerAnalyticsData | null>(null);
 
   useEffect(() => {
-    async function loadUser() {
+    async function loadData() {
       try {
         const sessionResponse = await fetch('/api/auth/session');
         if (!sessionResponse.ok) {
@@ -31,50 +43,85 @@ export default function TrainerDashboardPage() {
         }
 
         setUser(session.user);
+
+        const analyticsResponse = await fetch('/api/trainer/analytics');
+        const analyticsData = await analyticsResponse.json();
+        if (analyticsData.success) {
+          setData(analyticsData);
+        } else {
+          toast(analyticsData.error || 'Gagal memuat data dashboard', 'error');
+        }
       } catch {
-        router.replace('/login');
+        toast('Tidak dapat memuat dashboard', 'error');
       } finally {
         setLoading(false);
       }
     }
 
-    loadUser();
-  }, [router]);
+    loadData();
+  }, [router, toast]);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/login');
   }
 
-  if (loading || !user) {
-    return <main>Loading...</main>;
+  if (loading) {
+    return (
+      <main className={layoutStyles.loading} data-theme="trainer">
+        <Loader />
+      </main>
+    );
   }
 
+  if (!user || !data) {
+    return (
+      <main className={layoutStyles.error} data-theme="trainer">
+        Gagal memuat data dashboard.
+      </main>
+    );
+  }
+
+  const totalSessions = data.rawData.length;
+  const totalParticipants = data.rawData.reduce((sum, item) => sum + item.participant, 0);
+  const totalHours = data.rawData.reduce((sum, item) => sum + item.totalTHours, 0);
+  const internalCount = data.rawData.filter((item) =>
+    item.jenisTraining?.toUpperCase().includes('INTERNAL')
+  ).length;
+  const externalCount = data.rawData.filter((item) =>
+    item.jenisTraining?.toUpperCase().includes('EKSTERNAL')
+  ).length;
+
   return (
-    <main style={{ padding: 24 }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <p style={{ margin: 0, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Trainer</p>
-          <h1 style={{ margin: '6px 0 0' }}>Dashboard Trainer</h1>
-        </div>
+    <main className={layoutStyles.shell} data-theme="trainer">
+      <Sidebar user={user} />
 
-        <button type="button" onClick={logout}>Logout</button>
-      </header>
+      <div className={layoutStyles.main}>
+        <Header title="Training Dashboard" onLogout={logout} />
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))', gap: 16 }}>
-        <div style={{ border: '1px solid #ddd', padding: 16 }}>
-          <p style={{ margin: 0 }}>Nama</p>
-          <strong>{user.fullName}</strong>
+        <div className={layoutStyles.body}>
+          <div className={layoutStyles.content}>
+            <div className={dashStyles.container1}>
+              <div className={dashStyles.container1Left}>
+                <KpiCards
+                  totalSessions={totalSessions}
+                  totalParticipants={totalParticipants}
+                  totalHours={totalHours}
+                />
+                <FilterSection rawData={data.rawData} />
+              </div>
+              <CategoryPie
+                internalCount={internalCount}
+                externalCount={externalCount}
+              />
+            </div>
+
+            <MonthlyAnalytics rawData={data.rawData} />
+
+            <ProgramAnalytics rawData={data.rawData} showDimensionToggle={false} />
+          </div>
         </div>
-        <div style={{ border: '1px solid #ddd', padding: 16 }}>
-          <p style={{ margin: 0 }}>NIK</p>
-          <strong>{user.nik}</strong>
-        </div>
-        <div style={{ border: '1px solid #ddd', padding: 16 }}>
-          <p style={{ margin: 0 }}>Lokasi</p>
-          <strong>{user.locGroup || '-'}</strong>
-        </div>
-      </section>
+      </div>
     </main>
   );
 }
