@@ -47,6 +47,11 @@
   max-width: 100%;
 }
 
+.sidebarNav { width: 100%; display: grid; gap: 8px; margin-top: 16px; text-align: left; }
+.sidebarNavLink, .sidebarNavActive { border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 700; text-decoration: none; }
+.sidebarNavLink { color: var(--text); background: #f5f5f4; }
+.sidebarNavActive { color: #fff; background: var(--accent); }
+
 .main {
   margin-left: 200px;
   min-height: 100vh;

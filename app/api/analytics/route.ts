@@ -7,9 +7,8 @@ export async function GET() {
     const rawData = await getTrainingData();
     const trainerMaster = await getTrainerMasterData();
 
-    // Total Sesi diambil dari angka nomor (No) pada baris paling akhir
-    const lastRowNo = rawData.length > 0 ? rawData[rawData.length - 1].no : 0;
-    const totalSessions = lastRowNo || rawData.length;
+    // Nomor Sheet dapat memiliki celah saat approval dibatalkan; jumlah baris adalah total sesi yang akurat.
+    const totalSessions = rawData.length;
 
     const totalParticipants = rawData.reduce((acc, curr) => acc + curr.participant, 0);
     const totalHours = rawData.reduce((acc, curr) => acc + curr.totalTHours, 0);

@@ -16,8 +16,8 @@ async function getRole(request: NextRequest) {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const role = await getRole(request);
-  const isAdminPath = pathname === '/admin' || pathname.startsWith('/api/analytics');
-  const isTrainerPath = pathname === '/';
+  const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/') || pathname.startsWith('/api/analytics');
+  const isTrainerPath = pathname === '/' || pathname.startsWith('/requests');
 
   if (isAdminPath && role !== 'admin') {
     if (pathname.startsWith('/api/')) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -28,5 +28,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/admin', '/api/analytics'],
+  matcher: ['/', '/admin/:path*', '/requests/:path*', '/api/analytics'],
 };
