@@ -25,6 +25,7 @@ interface AnalyticsData {
     externalCount: number;
   };
   rawData: TrainingRow[];
+  trainerMaster?: { fullName: string; locGroup: string }[]; 
 }
 
 export default function DashboardPage() {
@@ -119,7 +120,7 @@ export default function DashboardPage() {
 
             <RegionAnalytics rawData={data.rawData} />
 
-            <TrainerAnalytics rawData={data.rawData} />
+            <TrainerAnalytics rawData={data.rawData} trainerMasterData={data.trainerMaster} />
           </div>
         </div>
       </div>

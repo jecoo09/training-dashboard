@@ -1,10 +1,11 @@
 // app/api/analytics/route.ts
 import { NextResponse } from 'next/server';
-import { getTrainingData } from '@/lib/googleSheets';
+import { getTrainingData, getTrainerMasterData } from '@/lib/googleSheets';
 
 export async function GET() {
   try {
     const rawData = await getTrainingData();
+    const trainerMaster = await getTrainerMasterData();
 
     // Total Sesi diambil dari angka nomor (No) pada baris paling akhir
     const lastRowNo = rawData.length > 0 ? rawData[rawData.length - 1].no : 0;
@@ -32,6 +33,7 @@ export async function GET() {
         externalCount,
       },
       rawData,
+      trainerMaster,
     });
   } catch (error) {
     console.error('Error fetching Google Sheets data:', error);

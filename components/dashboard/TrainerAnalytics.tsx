@@ -11,16 +11,27 @@ import {
 } from '@/lib/dashboard';
 import styles from './dashboard.module.css';
 
-interface TrainerAnalyticsProps {
-  rawData: TrainingRow[];
+interface TrainerMaster {
+  fullName: string;
+  locGroup: string;
 }
 
-export default function TrainerAnalytics({ rawData }: TrainerAnalyticsProps) {
+interface TrainerAnalyticsProps {
+  rawData: TrainingRow[];
+  trainerMasterData?: TrainerMaster[]; 
+}
+
+export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: TrainerAnalyticsProps) {
   const [trainerFilterMonth, setTrainerFilterMonth] = useState<string>('All');
   const [trainerFilterProgram, setTrainerFilterProgram] = useState<string>('All');
   const [hideZero, setHideZero] = useState<boolean>(false);
 
   const isFiltered = trainerFilterMonth !== 'All' || trainerFilterProgram !== 'All';
+
+  const trainerLocMap = new Map<string, string>();
+  trainerMasterData.forEach((t) => {
+    trainerLocMap.set(t.fullName.trim().toUpperCase(), t.locGroup);
+  });
 
   const allTrainers = TRAINER_TARGET_LIST.map((targetName) => {
     let totalHours = 0;
@@ -40,8 +51,11 @@ export default function TrainerAnalytics({ rawData }: TrainerAnalyticsProps) {
       }
     });
 
+    const location = trainerLocMap.get(targetName.toUpperCase()) || '-';
+
     return {
       name: targetName,
+      location: location,
       hours: totalHours,
       sessions: totalSessions,
     };
@@ -114,6 +128,7 @@ export default function TrainerAnalytics({ rawData }: TrainerAnalyticsProps) {
             <tr>
               <th className={styles.colNo}>No</th>
               <th className={styles.colTrainer}>Nama Trainer</th>
+              <th>Wilayah Kerja</th>
               <th className={styles.colStat}>Total Sesi</th>
               <th className={styles.colStat}>Total Training Hours</th>
             </tr>
@@ -124,6 +139,7 @@ export default function TrainerAnalytics({ rawData }: TrainerAnalyticsProps) {
                 <tr key={trainer.name}>
                   <td className={styles.colNo}>{idx + 1}</td>
                   <td>{trainer.name}</td>
+                  <td>{trainer.location}</td>
                   <td>{trainer.sessions} Sesi</td>
                   <td><strong>{trainer.hours} Jam</strong></td>
                 </tr>
@@ -138,7 +154,7 @@ export default function TrainerAnalytics({ rawData }: TrainerAnalyticsProps) {
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={2} className={styles.totalLabel}>TOTAL AKUMULASI</td>
+              <td colSpan={3} className={styles.totalLabel}>TOTAL AKUMULASI</td>
               <td>
                 <strong>{visibleTrainers.reduce((acc, curr) => acc + curr.sessions, 0)} Sesi</strong>
               </td>

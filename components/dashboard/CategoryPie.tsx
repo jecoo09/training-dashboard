@@ -50,11 +50,11 @@ export default function CategoryPie({ internalCount, externalCount }: CategoryPi
       <div className={styles.pieLegend}>
         <div className={styles.pieLegendItem}>
           <span className={`${styles.pieDot} ${styles.pieDotInternal}`} />
-          Internal · {internalCount}
+          Internal: {internalCount}
         </div>
         <div className={styles.pieLegendItem}>
           <span className={`${styles.pieDot} ${styles.pieDotExternal}`} />
-          Eksternal · {externalCount}
+          Eksternal: {externalCount}
         </div>
       </div>
     </section>

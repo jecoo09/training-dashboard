@@ -84,3 +84,30 @@ export async function findTrainerByNik(nik: string): Promise<TrainerMasterRow | 
     position: String(row[4] || '').trim(),
   };
 }
+
+export async function getTrainerMasterData(): Promise<TrainerMasterRow[]> {
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+  const sheets = google.sheets({ version: 'v4', auth });
+  
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.SPREADSHEET_ID,
+    range: 'TRAINER!A2:E',
+  });
+
+  const rows = response.data.values || [];
+  
+  // Asumsi Kolom:
+  // Row[1] = Nama Lengkap, Row[2] = NIK, Row[3] = Lokasi/LocGroup
+  return rows.map((row) => ({
+    fullName: String(row[1] || '').trim(),
+    nik: String(row[2] || '').trim(),
+    locGroup: String(row[3] || '').trim(),
+    position: String(row[4] || '').trim(),
+  }));
+}
