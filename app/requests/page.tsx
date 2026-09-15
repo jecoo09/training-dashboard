@@ -1,5 +1,52 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/layout/Header'; import Sidebar from '@/components/layout/Sidebar'; import Loader from '@/components/ui/Loader'; import TrainingRequests from '@/components/requests/TrainingRequests'; import type { User } from '@/lib/dashboard'; import styles from '@/components/layout/layout.module.css';
-export default function RequestsPage() { const router = useRouter(); const [user, setUser] = useState<User | null>(null); useEffect(() => { fetch('/api/auth/session').then((r) => r.json()).then((data) => { if (data.user?.role !== 'trainer') router.replace('/login'); else setUser(data.user); }); }, [router]); async function logout() { await fetch('/api/auth/logout', { method: 'POST' }); router.replace('/login'); } if (!user) return <main className={styles.loading} data-theme="trainer"><Loader /></main>; return <main className={styles.shell} data-theme="trainer"><Sidebar user={user}/><div className={styles.main}><Header title="Pengajuan Training" onLogout={logout}/><div className={styles.body}><TrainingRequests user={user}/></div></div></main>; }
+import Header from '@/components/layout/Header';
+import Sidebar from '@/components/layout/Sidebar';
+import Loader from '@/components/ui/Loader';
+import TrainingRequests from '@/components/requests/TrainingRequests';
+import type { User } from '@/lib/dashboard';
+import styles from '@/components/layout/layout.module.css';
+
+export default function RequestsPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user?.role !== 'trainer') {
+          router.replace('/login');
+        } else {
+          setUser(data.user);
+        }
+      });
+  }, [router]);
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.replace('/login');
+  }
+
+  if (!user) {
+    return (
+      <main className={styles.loading} data-theme="trainer">
+        <Loader />
+      </main>
+    );
+  }
+
+  return (
+    <main className={styles.shell} data-theme="trainer">
+      <Sidebar user={user} />
+      <div className={styles.main}>
+        <Header title="Training Dashboard" onLogout={logout} />
+        <div className={styles.body}>
+          <TrainingRequests user={user} />
+        </div>
+      </div>
+    </main>
+  );
+}

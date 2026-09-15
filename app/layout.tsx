@@ -18,10 +18,10 @@ export const metadata: Metadata = {
   description: 'TND 2026 Training Dashboard',
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
-      <body className={`${outfit.variable} ${plusJakarta.variable}`}>
+    <html lang="id" suppressHydrationWarning>
+      <body className={`${outfit.variable} ${plusJakarta.variable}`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -12,6 +12,7 @@ interface SidebarProps {
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const dashboardHref = user.role === 'admin' ? '/admin' : '/';
+  const monthlyRecapHref = '/admin/monthly-recap';
   const requestsHref = user.role === 'admin' ? '/admin/requests' : '/requests';
   return (
     <aside className={styles.sidebar}>
@@ -21,6 +22,9 @@ export default function Sidebar({ user }: SidebarProps) {
       <p className={styles.sidebarLoc}>{user.locGroup || '-'}</p>
       <nav className={styles.sidebarNav} aria-label="Navigasi utama">
         <Link className={pathname === dashboardHref ? styles.sidebarNavActive : styles.sidebarNavLink} href={dashboardHref}>Dashboard</Link>
+        {user.role === 'admin' && (
+          <Link className={pathname === monthlyRecapHref ? styles.sidebarNavActive : styles.sidebarNavLink} href={monthlyRecapHref}>Monthly Recap</Link>
+        )}
         <Link className={pathname === requestsHref ? styles.sidebarNavActive : styles.sidebarNavLink} href={requestsHref}>Pengajuan Training</Link>
       </nav>
     </aside>

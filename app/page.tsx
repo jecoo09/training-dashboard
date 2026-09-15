@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
-import KpiCards from '@/components/dashboard/KpiCards';
 import CategoryPie from '@/components/dashboard/CategoryPie';
 import FilterSection from '@/components/dashboard/FilterSection';
-import MonthlyAnalytics, { MomComparison } from '@/components/dashboard/MonthlyAnalytics';
+import MonthlyAnalytics from '@/components/dashboard/MonthlyAnalytics';
 import ProgramAnalytics from '@/components/dashboard/ProgramAnalytics';
-import Loader from '@/components/ui/Loader';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useToast } from '@/components/ui/ToastProvider';
 import type { User, TrainingRow } from '@/lib/dashboard';
 import layoutStyles from '@/components/layout/layout.module.css';
@@ -26,6 +25,7 @@ export default function TrainerDashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<TrainerAnalyticsData | null>(null);
+  const [filteredRows, setFilteredRows] = useState<TrainingRow[] | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -48,6 +48,7 @@ export default function TrainerDashboardPage() {
         const analyticsData = await analyticsResponse.json();
         if (analyticsData.success) {
           setData(analyticsData);
+          setFilteredRows(analyticsData.rawData);
         } else {
           toast(analyticsData.error || 'Gagal memuat data dashboard', 'error');
         }
@@ -67,11 +68,7 @@ export default function TrainerDashboardPage() {
   }
 
   if (loading) {
-    return (
-      <main className={layoutStyles.loading} data-theme="trainer">
-        <Loader />
-      </main>
-    );
+    return <LoadingOverlay />;
   }
 
   if (!user || !data) {
@@ -82,13 +79,11 @@ export default function TrainerDashboardPage() {
     );
   }
 
-  const totalSessions = data.rawData.length;
-  const totalParticipants = data.rawData.reduce((sum, item) => sum + item.participant, 0);
-  const totalHours = data.rawData.reduce((sum, item) => sum + item.totalTHours, 0);
-  const internalCount = data.rawData.filter((item) =>
+  const activeRows = filteredRows ?? data.rawData;
+  const internalCount = activeRows.filter((item) =>
     item.jenisTraining?.toUpperCase().includes('INTERNAL')
   ).length;
-  const externalCount = data.rawData.filter((item) =>
+  const externalCount = activeRows.filter((item) =>
     item.jenisTraining?.toUpperCase().includes('EKSTERNAL')
   ).length;
 
@@ -102,14 +97,10 @@ export default function TrainerDashboardPage() {
         <div className={layoutStyles.body}>
           <div className={layoutStyles.content}>
             <div className={dashStyles.container1}>
-              <div className={dashStyles.container1Left}>
-                <KpiCards
-                  totalSessions={totalSessions}
-                  totalParticipants={totalParticipants}
-                  totalHours={totalHours}
-                />
-                <FilterSection rawData={data.rawData} />
-              </div>
+              <FilterSection
+                rawData={data.rawData}
+                onFilteredDataChange={(rows) => setFilteredRows(rows)}
+              />
               <CategoryPie
                 internalCount={internalCount}
                 externalCount={externalCount}

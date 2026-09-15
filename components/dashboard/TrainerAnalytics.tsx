@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import {
   MONTHS,
+  REGION_LIST,
   PROGRAM_LIST_FULL,
   TRAINER_TARGET_LIST,
   matchesMonth,
+  matchesRegion,
   matchesProgram,
   type TrainingRow,
 } from '@/lib/dashboard';
@@ -18,30 +20,38 @@ interface TrainerMaster {
 
 interface TrainerAnalyticsProps {
   rawData: TrainingRow[];
-  trainerMasterData?: TrainerMaster[]; 
+  trainerMasterData?: TrainerMaster[];
 }
+
+type ColumnKey = 'name' | 'location' | 'sessions' | 'hours';
 
 export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: TrainerAnalyticsProps) {
   const [trainerFilterMonth, setTrainerFilterMonth] = useState<string>('All');
+  const [trainerFilterRegion, setTrainerFilterRegion] = useState<string>('All');
   const [trainerFilterProgram, setTrainerFilterProgram] = useState<string>('All');
-  const [hideZero, setHideZero] = useState<boolean>(false);
 
-  const isFiltered = trainerFilterMonth !== 'All' || trainerFilterProgram !== 'All';
+  // Sort state
+  const [sortConfig, setSortConfig] = useState<{ key: ColumnKey | null; direction: 'asc' | 'desc' }>({
+    key: null,
+    direction: 'asc',
+  });
 
   const trainerLocMap = new Map<string, string>();
   trainerMasterData.forEach((t) => {
     trainerLocMap.set(t.fullName.trim().toUpperCase(), t.locGroup);
   });
 
+  // Calculate trainer totals
   const allTrainers = TRAINER_TARGET_LIST.map((targetName) => {
     let totalHours = 0;
     let totalSessions = 0;
 
     rawData.forEach((item) => {
       const matchMonth = matchesMonth(item, trainerFilterMonth);
+      const matchRegion = matchesRegion(item, trainerFilterRegion);
       const matchProgram = matchesProgram(item, trainerFilterProgram);
 
-      if (matchMonth && matchProgram) {
+      if (matchMonth && matchRegion && matchProgram) {
         const rawTrainerStr = item.namaTrainer || '';
         const namesInRow = rawTrainerStr.split(',').map((n) => n.trim().toUpperCase());
         if (namesInRow.includes(targetName.toUpperCase())) {
@@ -61,15 +71,52 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
     };
   });
 
-  const handleResetTrainerFilter = () => {
-    setTrainerFilterMonth('All');
-    setTrainerFilterProgram('All');
-    setHideZero(false);
+  // Auto-hide 0 sessions/hours AND filter by Region if selected
+  let visibleTrainers = allTrainers.filter((t) => {
+    if (t.sessions === 0 && t.hours === 0) return false;
+    if (trainerFilterRegion !== 'All' && t.location.toUpperCase() !== trainerFilterRegion.toUpperCase()) {
+      return false;
+    }
+    return true;
+  });
+
+  // Sort logic
+  if (sortConfig.key) {
+    visibleTrainers = [...visibleTrainers].sort((a, b) => {
+      const key = sortConfig.key!;
+      const valA = a[key];
+      const valB = b[key];
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+      return sortConfig.direction === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    });
+  }
+
+  const handleHeaderClick = (col: ColumnKey) => {
+    if (sortConfig.key !== col) {
+      setSortConfig({ key: col, direction: 'asc' });
+    } else if (sortConfig.direction === 'asc') {
+      setSortConfig({ key: col, direction: 'desc' });
+    } else {
+      setSortConfig({ key: null, direction: 'asc' });
+    }
   };
 
-  const visibleTrainers = (isFiltered || hideZero)
-    ? allTrainers.filter((t) => t.sessions > 0 || t.hours > 0)
-    : allTrainers;
+  const handleResetTrainerFilter = () => {
+    setTrainerFilterMonth('All');
+    setTrainerFilterRegion('All');
+    setTrainerFilterProgram('All');
+    setSortConfig({ key: null, direction: 'asc' });
+  };
+
+  const renderSortIndicator = (col: ColumnKey) => {
+    if (sortConfig.key !== col) return <span style={{ opacity: 0.4, fontSize: '11px' }}> ↕</span>;
+    return sortConfig.direction === 'asc' ? <span style={{ fontSize: '11px' }}> ▲</span> : <span style={{ fontSize: '11px' }}> ▼</span>;
+  };
 
   return (
     <section className={`${styles.card} ${styles.container4}`}>
@@ -89,6 +136,17 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
 
           <select
             className={styles.select}
+            value={trainerFilterRegion}
+            onChange={(e) => setTrainerFilterRegion(e.target.value)}
+          >
+            <option value="All">Semua Wilayah Kerja</option>
+            {REGION_LIST.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+
+          <select
+            className={styles.select}
             value={trainerFilterProgram}
             onChange={(e) => setTrainerFilterProgram(e.target.value)}
           >
@@ -97,20 +155,6 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
               <option key={p} value={p}>{p}</option>
             ))}
           </select>
-
-          <label
-            className={`${styles.radioLabel} ${isFiltered ? styles.radioDisabled : ''} ${(!isFiltered && hideZero) || isFiltered ? styles.radioActive : ''}`}
-            title={isFiltered ? 'Filter aktif: otomatis menyembunyikan trainer tanpa sesi' : 'Sembunyikan trainer dengan 0 sesi'}
-          >
-            <input
-              type="checkbox"
-              className={styles.radioInput}
-              checked={isFiltered ? true : hideZero}
-              disabled={isFiltered}
-              onChange={(e) => setHideZero(e.target.checked)}
-            />
-            <span>Hide 0 Session</span>
-          </label>
 
           <button
             type="button"
@@ -127,10 +171,46 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
           <thead>
             <tr>
               <th className={styles.colNo}>No</th>
-              <th className={styles.colTrainer}>Nama Trainer</th>
-              <th>Wilayah Kerja</th>
-              <th className={styles.colStat}>Total Sesi</th>
-              <th className={styles.colStat}>Total Training Hours</th>
+
+              <th
+                className={`${styles.colTrainer} ${styles.thFilterable}`}
+                onClick={() => handleHeaderClick('name')}
+                title="Klik untuk Urutkan Nama Trainer"
+              >
+                <div className={styles.thHeaderBtn}>
+                  <span>Nama Trainer{renderSortIndicator('name')}</span>
+                </div>
+              </th>
+
+              <th
+                className={styles.thFilterable}
+                onClick={() => handleHeaderClick('location')}
+                title="Klik untuk Urutkan Wilayah Kerja"
+              >
+                <div className={styles.thHeaderBtn}>
+                  <span>Wilayah Kerja{renderSortIndicator('location')}</span>
+                </div>
+              </th>
+
+              <th
+                className={`${styles.colStat} ${styles.thFilterable}`}
+                onClick={() => handleHeaderClick('sessions')}
+                title="Klik untuk Urutkan Total Sesi"
+              >
+                <div className={styles.thHeaderBtn}>
+                  <span>Total Sesi{renderSortIndicator('sessions')}</span>
+                </div>
+              </th>
+
+              <th
+                className={`${styles.colStat} ${styles.thFilterable}`}
+                onClick={() => handleHeaderClick('hours')}
+                title="Klik untuk Urutkan Total Training Hours"
+              >
+                <div className={styles.thHeaderBtn}>
+                  <span>Total Training Hours{renderSortIndicator('hours')}</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -138,7 +218,7 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
               visibleTrainers.map((trainer, idx) => (
                 <tr key={trainer.name}>
                   <td className={styles.colNo}>{idx + 1}</td>
-                  <td>{trainer.name}</td>
+                  <td style={{ textAlign: 'left' }}>{trainer.name}</td>
                   <td>{trainer.location}</td>
                   <td>{trainer.sessions} Sesi</td>
                   <td><strong>{trainer.hours} Jam</strong></td>
@@ -146,7 +226,7 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
               ))
             ) : (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
                   Tidak ada data trainer untuk filter yang dipilih
                 </td>
               </tr>

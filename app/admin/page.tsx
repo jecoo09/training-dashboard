@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
-import KpiCards from '@/components/dashboard/KpiCards';
 import CategoryPie from '@/components/dashboard/CategoryPie';
 import FilterSection from '@/components/dashboard/FilterSection';
-import MonthlyAnalytics, { MomComparison } from '@/components/dashboard/MonthlyAnalytics';
+import MonthlyAnalytics from '@/components/dashboard/MonthlyAnalytics';
 import RegionAnalytics from '@/components/dashboard/RegionAnalytics';
 import ProgramAnalytics from '@/components/dashboard/ProgramAnalytics';
 import TrainerAnalytics from '@/components/dashboard/TrainerAnalytics';
-import Loader from '@/components/ui/Loader';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import { useToast } from '@/components/ui/ToastProvider';
 import type { User, TrainingRow } from '@/lib/dashboard';
 import layoutStyles from '@/components/layout/layout.module.css';
@@ -25,18 +25,20 @@ interface AnalyticsData {
     externalCount: number;
   };
   rawData: TrainingRow[];
-  trainerMaster?: { fullName: string; locGroup: string }[]; 
+  trainerMaster?: { fullName: string; locGroup: string }[];
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<User | null>(null);
+  const [filteredRows, setFilteredRows] = useState<TrainingRow[] | null>(null);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/login';
+    router.replace('/login');
   }
 
   useEffect(() => {
@@ -44,13 +46,13 @@ export default function DashboardPage() {
       try {
         const sessionResponse = await fetch('/api/auth/session');
         if (!sessionResponse.ok) {
-          window.location.href = '/login';
+          router.replace('/login');
           return;
         }
 
         const session = await sessionResponse.json();
         if (session.user?.role !== 'admin') {
-          window.location.href = '/login';
+          router.replace('/login');
           return;
         }
 
@@ -60,6 +62,7 @@ export default function DashboardPage() {
         const result = await response.json();
         if (result.success) {
           setData(result);
+          setFilteredRows(result.rawData);
         } else {
           toast(result.error || 'Gagal memuat data dashboard', 'error');
         }
@@ -72,14 +75,10 @@ export default function DashboardPage() {
     }
 
     fetchData();
-  }, [toast]);
+  }, [router, toast]);
 
   if (loading) {
-    return (
-      <div className={layoutStyles.loading} data-theme="admin">
-        <Loader />
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   if (!data || !user) {
@@ -89,6 +88,14 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const activeRows = filteredRows ?? data.rawData;
+  const internalCount = activeRows.filter((item) =>
+    item.jenisTraining?.toUpperCase().includes('INTERNAL')
+  ).length;
+  const externalCount = activeRows.filter((item) =>
+    item.jenisTraining?.toUpperCase().includes('EKSTERNAL')
+  ).length;
 
   return (
     <div className={layoutStyles.shell} data-theme="admin">
@@ -100,17 +107,13 @@ export default function DashboardPage() {
         <div className={layoutStyles.body}>
           <div className={layoutStyles.content}>
             <div className={dashStyles.container1}>
-              <div className={dashStyles.container1Left}>
-                <KpiCards
-                  totalSessions={data.kpi.totalSessions}
-                  totalParticipants={data.kpi.totalParticipants}
-                  totalHours={data.kpi.totalHours}
-                />
-                <FilterSection rawData={data.rawData} />
-              </div>
+              <FilterSection
+                rawData={data.rawData}
+                onFilteredDataChange={(rows) => setFilteredRows(rows)}
+              />
               <CategoryPie
-                internalCount={data.kpi.internalCount}
-                externalCount={data.kpi.externalCount}
+                internalCount={internalCount}
+                externalCount={externalCount}
               />
             </div>
 

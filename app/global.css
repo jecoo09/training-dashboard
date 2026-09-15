@@ -112,3 +112,13 @@ table {
 [data-theme='admin'] .loader::before {
   border-color: var(--accent-secondary) #0000;
 }
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+

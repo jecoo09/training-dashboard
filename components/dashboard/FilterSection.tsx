@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MONTHS,
   REGION_LIST,
@@ -15,9 +15,10 @@ import styles from './dashboard.module.css';
 
 interface FilterSectionProps {
   rawData: TrainingRow[];
+  onFilteredDataChange?: (filteredData: TrainingRow[]) => void;
 }
 
-export default function FilterSection({ rawData }: FilterSectionProps) {
+export default function FilterSection({ rawData, onFilteredDataChange }: FilterSectionProps) {
   const [selectedMonth, setSelectedMonth] = useState<string>('All');
   const [selectedRegion, setSelectedRegion] = useState<string>('All');
   const [selectedProgram, setSelectedProgram] = useState<string>('All');
@@ -34,6 +35,13 @@ export default function FilterSection({ rawData }: FilterSectionProps) {
       matchesRegion(item, selectedRegion) &&
       matchesProgram(item, selectedProgram)
   );
+
+  useEffect(() => {
+    if (onFilteredDataChange) {
+      onFilteredDataChange(filteredData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth, selectedRegion, selectedProgram, rawData]);
 
   const section3Sessions = filteredData.length;
   const section3Participants = filteredData.reduce((sum, item) => sum + item.participant, 0);
@@ -63,7 +71,7 @@ export default function FilterSection({ rawData }: FilterSectionProps) {
   }
 
   return (
-    <section className={styles.card}>
+    <section className={`${styles.card} ${styles.filterCard}`}>
       <div className={styles.filterBar}>
         <select
           className={styles.select}
