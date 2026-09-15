@@ -253,6 +253,13 @@
   background: var(--card);
 }
 
+.tableCompact th,
+.tableCompact td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .table th {
   text-align: center;
   background-color: var(--brand);

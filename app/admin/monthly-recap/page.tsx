@@ -212,19 +212,31 @@ export default function MonthlyRecapPage() {
             {/* Responsive Spreadsheet Data Table */}
             <section className={dashStyles.card}>
               <div className={dashStyles.tableWrap}>
-                <table className={`${dashStyles.table} ${dashStyles.tableCompact}`}>
+                <table className={`${dashStyles.table} ${dashStyles.tableCompact}`} style={{ tableLayout: 'fixed', width: '100%' }}>
+                  <colgroup>
+                    <col style={{ width: '48px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '90px' }} />
+                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '130px' }} />
+                    <col style={{ width: '180px' }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th className={dashStyles.colNo}>No</th>
-                      <th style={{ minWidth: '120px' }}>Tanggal Pelaksanaan</th>
-                      <th style={{ minWidth: '90px' }}>Wilayah</th>
-                      <th style={{ minWidth: '180px' }}>Nama Training</th>
-                      <th style={{ minWidth: '180px' }}>Program Training</th>
-                      <th style={{ minWidth: '120px' }}>Jenis Training</th>
-                      <th style={{ minWidth: '100px' }}>Training Hours</th>
-                      <th style={{ minWidth: '100px' }}>Jumlah Peserta</th>
-                      <th style={{ minWidth: '120px' }}>Total Training Hours</th>
-                      <th style={{ minWidth: '180px' }}>Nama Trainer</th>
+                      <th>Tanggal Pelaksanaan</th>
+                      <th>Wilayah</th>
+                      <th>Nama Training</th>
+                      <th>Program Training</th>
+                      <th>Jenis Training</th>
+                      <th>Training Hours</th>
+                      <th>Jumlah Peserta</th>
+                      <th>Total Training Hours</th>
+                      <th>Nama Trainer</th>
                     </tr>
                   </thead>
                   <tbody>
