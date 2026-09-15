@@ -25,7 +25,7 @@ export default function Sidebar({ user }: SidebarProps) {
         {user.role === 'admin' && (
           <Link className={pathname === monthlyRecapHref ? styles.sidebarNavActive : styles.sidebarNavLink} href={monthlyRecapHref}>Monthly Recap</Link>
         )}
-        <Link className={pathname === requestsHref ? styles.sidebarNavActive : styles.sidebarNavLink} href={requestsHref}>Pengajuan Training</Link>
+        {/* <Link className={pathname === requestsHref ? styles.sidebarNavActive : styles.sidebarNavLink} href={requestsHref}>Pengajuan Training</Link> */}
       </nav>
     </aside>
   );
