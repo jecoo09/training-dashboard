@@ -2,6 +2,8 @@
 /node_modules
 /.pnp
 /sql
+/docs
+newAGENTS.md
 .pnp.js
 
 # Next.js Build Output
