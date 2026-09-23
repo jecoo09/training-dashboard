@@ -1,9 +1,10 @@
 # Dependencies
 /node_modules
 /.pnp
-/sql
-/docs
-newAGENTS.md
+# /sql
+# /docs
+/audit-summaries/
+# AGENTS.md
 .pnp.js
 
 # Next.js Build Output
