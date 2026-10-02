@@ -125,7 +125,7 @@
 .select {
   width: 100%;
   min-height: 40px;
-  padding: 0 12px;
+  padding: 0 32px 0 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background-color: var(--card);
@@ -241,7 +241,7 @@
 }
 
 .tableWrap {
-  overflow-x: auto;
+  overflow: visible;
   border-radius: 8px;
   width: 100%;
 }
@@ -255,9 +255,32 @@
 
 .tableCompact th,
 .tableCompact td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.tableCompact th {
+  overflow: visible;
+  vertical-align: middle;
+}
+
+.tableCompact td {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.tableCompact thead th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.tableCompact thead th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.tableIndexHeader {
+  background-color: var(--brand) !important;
+  color: #ffffff;
+  text-align: center;
 }
 
 .table th {
@@ -474,6 +497,13 @@
   justify-content: center;
   gap: 6px;
   width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: center;
 }
 
 .filterPopover {
@@ -518,6 +548,12 @@
   text-align: left;
 }
 
+.thHeaderBtn small {
+  flex: 0 0 auto;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
 .popoverSortBtn:hover {
   background: #f8fafc;
 }
@@ -530,7 +566,7 @@
 
 .popoverSearchInput {
   width: 100%;
-  padding: 6px 8px;
+  padding: 6px 28px 6px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 12px;

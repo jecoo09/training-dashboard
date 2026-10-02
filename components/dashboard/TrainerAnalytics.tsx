@@ -114,7 +114,7 @@ export default function TrainerAnalytics({ rawData, trainerMasterData = [] }: Tr
   };
 
   const renderSortIndicator = (col: ColumnKey) => {
-    if (sortConfig.key !== col) return <span style={{ opacity: 0.4, fontSize: '11px' }}> ↕</span>;
+    if (sortConfig.key !== col) return <span style={{ opacity: 0.4, fontSize: '11px' }}> </span>;
     return sortConfig.direction === 'asc' ? <span style={{ fontSize: '11px' }}> ▲</span> : <span style={{ fontSize: '11px' }}> ▼</span>;
   };
 

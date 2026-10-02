@@ -60,6 +60,10 @@ select {
   font: inherit;
 }
 
+select {
+  padding-right: 32px;
+}
+
 button {
   cursor: pointer;
 }
@@ -121,4 +125,3 @@ table {
     opacity: 1;
   }
 }
-
