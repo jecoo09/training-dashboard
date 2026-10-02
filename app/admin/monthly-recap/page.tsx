@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import writeXlsxFile from 'write-excel-file/browser';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
@@ -121,26 +122,27 @@ export default function MonthlyRecapPage() {
     setOpenColumn(null);
   };
 
-  const exportToExcel = () => {
-    const escapeHtml = (value: string) =>
-      value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const rows = sortedData.map((item, index) => [
-      String(index + 1),
-      ...columns.map(({ key }) => displayValue(item, key)),
-    ]);
-    const header = ['No', ...columns.map(({ label }) => label)];
-    const html = `
-      <html><head><meta charset="UTF-8"></head><body>
-      <table border="1"><thead><tr>${header.map((value) => `<th>${escapeHtml(value)}</th>`).join('')}</tr></thead>
-      <tbody>${rows.map((row) => `<tr>${row.map((value) => `<td>${escapeHtml(value)}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table></body></html>`;
-    const blob = new Blob([`\ufeff${html}`], { type: 'application/vnd.ms-excel;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `monthly-recap-${new Date().toISOString().slice(0, 10)}.xls`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const exportToExcel = async () => {
+    try {
+      const exportRows = sortedData.map((item, index) => ({ item, index }));
+      const exportColumns = [
+        { header: 'No', width: 6, cell: ({ index }: { index: number }) => index + 1 },
+        ...columns.map(({ key, label }) => ({
+          header: label,
+          width: key === 'namaTraining' || key === 'programTraining' || key === 'namaTrainer' ? 28 : 18,
+          cell: ({ item }: { item: TrainingRow }) => displayValue(item, key),
+        })),
+      ];
+      const workbook = writeXlsxFile(exportRows, {
+        columns: exportColumns,
+        sheet: 'Monthly Recap',
+        orientation: 'landscape',
+      });
+      await workbook.toFile(`monthly-recap-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (error) {
+      console.error('Error exporting Monthly Recap:', error);
+      toast('Gagal mengekspor file Excel', 'error');
+    }
   };
 
   const getFilterOptions = (key: ColumnKey) =>
