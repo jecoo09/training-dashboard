@@ -11,6 +11,7 @@ import {
   MONTHS,
   REGION_LIST,
   PROGRAM_LIST_FULL,
+  TRAINER_TARGET_LIST,
   calcPercentage,
   matchesMonth,
   matchesRegion,
@@ -32,6 +33,13 @@ type ColumnKey =
   | 'participant'
   | 'totalTHours'
   | 'namaTrainer';
+
+type TrainerSummary = {
+  name: string;
+  location: string;
+  sessions: number;
+  hours: number;
+};
 
 const columns: Array<{ key: ColumnKey; label: string }> = [
   { key: 'tanggalPelaksanaan', label: 'Tanggal Pelaksanaan' },
@@ -56,6 +64,7 @@ export default function MonthlyRecapPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [rawData, setRawData] = useState<TrainingRow[]>([]);
+  const [trainerMasterData, setTrainerMasterData] = useState<Array<{ fullName: string; locGroup: string }>>([]);
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState<string>('All');
@@ -67,6 +76,8 @@ export default function MonthlyRecapPage() {
     key: null,
     direction: 'asc',
   });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'recap' | 'trainer'>('recap');
 
   useEffect(() => {
     async function init() {
@@ -89,6 +100,7 @@ export default function MonthlyRecapPage() {
         const analyticsData = await analyticsRes.json();
         if (analyticsData.success) {
           setRawData(analyticsData.rawData || []);
+          setTrainerMasterData(analyticsData.trainerMaster || []);
         } else {
           toast(analyticsData.error || 'Gagal memuat data Monthly Recap', 'error');
         }
@@ -122,25 +134,58 @@ export default function MonthlyRecapPage() {
     setOpenColumn(null);
   };
 
-  const exportToExcel = async () => {
+  const exportToExcel = async (table: 'recap' | 'trainer') => {
     try {
-      const exportRows = sortedData.map((item, index) => ({ item, index }));
-      const exportColumns = [
-        { header: 'No', width: 6, cell: ({ index }: { index: number }) => index + 1 },
-        ...columns.map(({ key, label }) => ({
-          header: label,
-          width: key === 'namaTraining' || key === 'programTraining' || key === 'namaTrainer' ? 28 : 18,
-          cell: ({ item }: { item: TrainingRow }) => displayValue(item, key),
-        })),
-      ];
-      const workbook = writeXlsxFile(exportRows, {
-        columns: exportColumns,
-        sheet: 'Monthly Recap',
-        orientation: 'landscape',
-      });
-      await workbook.toFile(`monthly-recap-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      const dateSuffix = new Date().toISOString().slice(0, 10);
+
+      if (table === 'recap') {
+        const exportRows = sortedData.map((item, index) => ({ item, index }));
+        const workbook = writeXlsxFile(exportRows, {
+          columns: [
+            { header: 'No', width: 6, cell: ({ index }: { index: number }) => index + 1 },
+            ...columns.map(({ key, label }) => ({
+              header: label,
+              width: key === 'namaTraining' || key === 'programTraining' || key === 'namaTrainer' ? 28 : 18,
+              cell: ({ item }: { item: TrainingRow }) => displayValue(item, key),
+            })),
+          ],
+          sheet: 'Monthly Recap',
+          orientation: 'landscape',
+        });
+        await workbook.toFile(`monthly-recap-${dateSuffix}.xlsx`);
+      } else {
+        const totalTrainerSessions = trainerData.reduce((sum, trainer) => sum + trainer.sessions, 0);
+        const totalTrainerHours = trainerData.reduce((sum, trainer) => sum + trainer.hours, 0);
+        const exportRows = [
+          ...trainerData,
+          {
+            name: 'TOTAL AKUMULASI',
+            location: '',
+            sessions: totalTrainerSessions,
+            hours: totalTrainerHours,
+          },
+        ].map((item, index) => ({ item, index }));
+        const workbook = writeXlsxFile(exportRows, {
+          columns: [
+            {
+              header: 'No',
+              width: 6,
+              cell: ({ index }: { index: number }) => (index < trainerData.length ? index + 1 : ''),
+            },
+            { header: 'Nama Trainer', width: 32, cell: ({ item }: { item: TrainerSummary }) => item.name },
+            { header: 'Wilayah Kerja', width: 18, cell: ({ item }: { item: TrainerSummary }) => item.location },
+            { header: 'Total Sesi', width: 14, cell: ({ item }: { item: TrainerSummary }) => item.sessions },
+            { header: 'Total Training Hours', width: 22, cell: ({ item }: { item: TrainerSummary }) => item.hours },
+          ],
+          sheet: 'Trainer Analytics',
+          orientation: 'landscape',
+        });
+        await workbook.toFile(`trainer-analytics-${dateSuffix}.xlsx`);
+      }
+
+      setExportMenuOpen(false);
     } catch (error) {
-      console.error('Error exporting Monthly Recap:', error);
+      console.error(`Error exporting ${table === 'recap' ? 'Monthly Recap' : 'Trainer Analytics'}:`, error);
       toast('Gagal mengekspor file Excel', 'error');
     }
   };
@@ -177,6 +222,27 @@ export default function MonthlyRecapPage() {
         : String(valueA).localeCompare(String(valueB), 'id', { numeric: true, sensitivity: 'base' });
     return sortConfig.direction === 'asc' ? result : -result;
   });
+
+  const trainerLocMap = new Map<string, string>();
+  trainerMasterData.forEach((trainer) => {
+    trainerLocMap.set(trainer.fullName.trim().toUpperCase(), trainer.locGroup);
+  });
+
+  const trainerData: TrainerSummary[] = TRAINER_TARGET_LIST.map((trainerName) => {
+    const location = trainerLocMap.get(trainerName.toUpperCase()) || '-';
+    const trainerRows = filteredData.filter((item) => {
+      const names = item.namaTrainer.split(',').map((name) => name.trim().toUpperCase());
+      return names.includes(trainerName.toUpperCase()) &&
+        (selectedRegion === 'All' || location.toUpperCase() === selectedRegion.toUpperCase());
+    });
+
+    return {
+      name: trainerName,
+      location,
+      sessions: trainerRows.length,
+      hours: trainerRows.reduce((sum, item) => sum + item.totalTHours, 0),
+    };
+  }).filter((trainer) => trainer.sessions > 0 || trainer.hours > 0);
 
   const totalSessions = filteredData.length;
   const totalParticipants = filteredData.reduce((sum, item) => sum + item.participant, 0);
@@ -270,9 +336,40 @@ export default function MonthlyRecapPage() {
                   <button type="button" className={dashStyles.resetButton} onClick={handleResetFilter}>
                     Reset Filter
                   </button>
-                  <button type="button" className={dashStyles.resetButton} onClick={exportToExcel}>
-                    Export Excel
-                  </button>
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      className={dashStyles.resetButton}
+                      onClick={() => setExportMenuOpen((current) => !current)}
+                      aria-expanded={exportMenuOpen}
+                    >
+                      Export Excel
+                    </button>
+                    {exportMenuOpen && (
+                      <div
+                        className={dashStyles.filterPopover}
+                        style={{ right: 0, left: 'auto', minWidth: '190px' }}
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          className={dashStyles.popoverSortBtn}
+                          onClick={() => exportToExcel('recap')}
+                          role="menuitem"
+                        >
+                          Tabel Monthly Recap
+                        </button>
+                        <button
+                          type="button"
+                          className={dashStyles.popoverSortBtn}
+                          onClick={() => exportToExcel('trainer')}
+                          role="menuitem"
+                        >
+                          Tabel Trainer Analytics
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -303,8 +400,84 @@ export default function MonthlyRecapPage() {
               </div>
             </section>
 
-            {/* Responsive Spreadsheet Data Table */}
             <section className={dashStyles.card}>
+              <div className={dashStyles.cardHeader} style={{ justifyContent: 'flex-start', marginBottom: '12px' }}>
+                <div
+                  role="tablist"
+                  aria-label="Pilihan tabel Monthly Recap"
+                  style={{ display: 'flex', gap: '4px' }}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'recap'}
+                    className={activeTab === 'recap' ? dashStyles.resetButton : dashStyles.select}
+                    style={{ minHeight: '32px', padding: '0 12px', fontSize: '12px' }}
+                    onClick={() => setActiveTab('recap')}
+                  >
+                    Monthly Recap
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'trainer'}
+                    className={activeTab === 'trainer' ? dashStyles.resetButton : dashStyles.select}
+                    style={{ minHeight: '32px', padding: '0 12px', fontSize: '12px' }}
+                    onClick={() => setActiveTab('trainer')}
+                  >
+                    Trainer Analytics
+                  </button>
+                </div>
+              </div>
+
+              {activeTab === 'trainer' && (
+              <div className={dashStyles.tableWrap}>
+                <table className={`${dashStyles.table} ${dashStyles.tableCompact}`}>
+                  <thead>
+                    <tr>
+                      <th className={dashStyles.colNo}>No</th>
+                      <th>Nama Trainer</th>
+                      <th>Wilayah Kerja</th>
+                      <th>Total Sesi</th>
+                      <th>Total Training Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trainerData.length > 0 ? (
+                      trainerData.map((trainer, index) => (
+                        <tr key={trainer.name}>
+                          <td className={dashStyles.colNo}>{index + 1}</td>
+                          <td>{trainer.name}</td>
+                          <td>{trainer.location}</td>
+                          <td style={{ textAlign: 'center' }}>{trainer.sessions} Sesi</td>
+                          <td style={{ textAlign: 'center' }}><strong>{trainer.hours} Jam</strong></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                          Tidak ada data trainer untuk filter yang dipilih.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3}>TOTAL AKUMULASI</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <strong>{trainerData.reduce((sum, trainer) => sum + trainer.sessions, 0)} Sesi</strong>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <strong>{trainerData.reduce((sum, trainer) => sum + trainer.hours, 0)} Jam</strong>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              )}
+
+            {/* Responsive Spreadsheet Data Table */}
+            {activeTab === 'recap' && (
               <div className={dashStyles.tableWrap}>
                 <table className={`${dashStyles.table} ${dashStyles.tableCompact}`} style={{ tableLayout: 'fixed', width: '100%' }}>
                   <colgroup>
@@ -446,6 +619,7 @@ export default function MonthlyRecapPage() {
                   </tbody>
                 </table>
               </div>
+            )}
             </section>
           </div>
         </div>
